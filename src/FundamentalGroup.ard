@@ -1,0 +1,39 @@
+\import Algebra.Group
+\import Algebra.Monoid
+\import Algebra.Monoid.Category
+\import Equiv
+\import Function
+\import Paths
+
+-- We restrict to `\1-Type`s since `Group`s are defined to have `\Set`s as their carriers.
+\instance FundamentalGroup (A : \1-Type) (x : A) : Group (x = x)
+  | ide => idp
+  | * => *>
+  | ide-left => \lam {p} => idp_*> p
+  | ide-right => idp
+  | *-assoc => \lam {p q r : x = x} => *>-assoc p q r
+  | inverse => inv
+  | inverse-left => inv_*>
+  | inverse-right => *>_inv
+
+\record Endomorphism \extends Map
+  | B => A
+
+\instance EndMonoid (A : \Set) : Monoid (Endomorphism {A})
+  | ide => \new Endomorphism id
+  | * f g => \new Endomorphism (Map.f {g} o Map.f {f})
+  | ide-left => idp
+  | ide-right => idp
+  | *-assoc {_} {_} {_} => idp
+
+-- transport_*> says essentially that transport is a groupoid homomorphism
+-- in particular, if the basepoint is fixed, it induces a group homomorphism
+\func transport_hom {A : \Type} (B : A -> \Type) {x : A} (p q : x = x) :
+  transport B (p *> q) = (transport B q o transport B p) =>
+  funExt (\lam _ => _) _ _ (transport_*> B _ _)
+
+-- why is MonoidHom a \record and not a \class?
+\func TransportHom {A : \1-Type} (x : A) (B : A -> \Set) :
+  MonoidHom (FundamentalGroup A x) (EndMonoid (B x)) (\lam p => \new Endomorphism (transport B p)) \cowith
+  | func-ide => idp
+  | func-* p q => pmap (\new Endomorphism __) (transport_hom B p q)
