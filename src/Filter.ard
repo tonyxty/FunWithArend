@@ -1,0 +1,72 @@
+\import Data.Bool
+\import Data.List
+\import Logic
+\import Paths
+
+\func reverse {A : \Type} (l : List A) : List A => reverse-append l nil
+  \where
+    \func reverse-append {A : \Type} (l r : List A) : List A \elim l
+      | nil => r
+      | :: x xs => reverse-append xs (x :: r)
+
+\func reverse_isInvolutive {A : \Type} (l : List A) : reverse (reverse l) = l =>
+  reverse-append_isInvolutive _ _
+  \where
+    \func reverse-append_isInvolutive {A : \Type} (l r : List A) :
+      reverse (reverse.reverse-append l r) = reverse.reverse-append r l \elim l
+      | nil => idp
+      | :: x xs => reverse-append_isInvolutive _ _
+
+\func filter {A : \Type} (P : A -> Bool) (l : List A) : List A \elim l
+  | nil => nil
+  | :: x xs => \let ys => filter P xs \in if (P x) (x :: ys) ys
+
+\func isSubList {A : \Type} (l l' : List A) : \Prop
+  | nil, _ => \Sigma
+  | :: _ _, nil => Empty
+  | :: x xs, :: y ys =>
+    (\Sigma (x = y) (isSubList xs ys)) || isSubList (x :: xs) ys
+
+\func isSubList-cons {A : \Type} {l l' : List A} (y : A) (pf : isSubList l l') : isSubList l (y :: l') \elim l, l'
+  | nil, _ => ()
+  | :: _ _, :: _ _ => byRight pf
+
+\func filter_isSubList {A : \Type} (P : A -> Bool) (l : List A) :
+  filter P l `isSubList` l \elim l
+  | nil => ()
+  | :: x xs => \case P x \as b \return
+  isSubList (\let ys => filter P xs \in if b (x :: ys) ys) (x :: xs) \with {
+    | true => byLeft (idp, (filter_isSubList P xs))
+    | false => isSubList-cons x (filter_isSubList P xs)
+  }
+
+\func isAll {A : \Type} (l : List A) (P : A -> Bool) : \Prop \elim l
+  | nil => \Sigma
+  | :: x xs => \Sigma (So (P x)) (xs `isAll` P)
+
+\func filter_isAllP {A : \Type} (P : A -> Bool) (l : List A) : (filter P l) `isAll` P \elim l
+  | nil => ()
+  | :: x xs => \case P x \as b, idp {Bool} {b}: b = P x \return
+  (\let ys => filter P xs \in if b (x :: ys) ys) `isAll` P \with {
+    | true, e => (transport So e so, filter_isAllP P xs)
+    | false, _ => filter_isAllP P xs
+  }
+
+-- "universal property"
+
+\func filter_isMaximalAllP {A : \Type} (P : A -> Bool) (l' l : List A)
+                           (pf1 : l' `isSubList` l) (pf2 : l' `isAll` P) : l' `isSubList` (filter P l) \elim l', l
+  | nil, _ => ()
+  | :: x xs, nil => pf1
+  | :: x xs, :: y ys => \case \elim pf1, pf2 \with {
+    | byLeft (e, pf1'), (Px, pf2') => \case P y \as b, idp : P y = b \return
+    isSubList (x :: xs) (\let ys => filter P ys \in if b (y :: ys) ys) \with {
+      | true, _ => byLeft (e, filter_isMaximalAllP P _ _ pf1' pf2')
+      | false, e' => So.absurd (transport So (pmap P e *> e') Px)
+    }
+    | byRight pf1', (Px, pf2') => \case P y \as b \return
+    isSubList (x :: xs) (\let ys' => filter P ys \in if b (y :: ys') ys') \with {
+      | true => byRight (filter_isMaximalAllP P _ _ pf1' pf2)
+      | false => filter_isMaximalAllP P _ _ pf1' pf2
+    }
+  }
