@@ -64,3 +64,16 @@
 
 \func [Bool=Bool]=Bool : (Bool = Bool) = Bool =>
   QEquiv-to-= univalence *> path (iso toBool fromBool from_to to_from)
+
+\func IteratedEquiv (n : Nat) : \Set
+  | zero => Equiv {Bool} {Bool}
+  | suc n => Equiv {IteratedEquiv n} {Bool}
+
+\func base : IteratedEquiv (suc zero) => =-to-Equiv (path (iso toBool fromBool from_to to_from))
+
+\func iterated_equiv (n : Nat) : IteratedEquiv (suc n)
+  | zero => base
+  | suc n =>
+    =-to-Equiv (inv (QEquiv-to-= (univalence {IteratedEquiv n} {Bool}))
+      *> (pmap (__ = Bool) (Equiv-to-= (iterated_equiv n)))
+      *> QEquiv-to-= (univalence {Bool} {Bool})) `transEquiv` base
