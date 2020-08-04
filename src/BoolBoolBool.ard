@@ -1,0 +1,66 @@
+\import Data.Bool
+\import Equiv
+\import Equiv.Univalence
+\import Function
+\import Logic
+\import Paths
+
+\func equiv_isInj (e : Equiv) {x y : e.A} (fp : e.f x = e.f y) : x = y =>
+  (inv (e.ret_f _)) *> pmap e.ret fp *> e.ret_f _
+
+\func notEquiv : QEquiv \cowith {
+  | A => Bool
+  | B => Bool
+  | f => not
+  | ret => not
+  | ret_f x => \case \elim x \with {
+    | true => idp
+    | false => idp
+  }
+  | f_sec x => \case \elim x \with {
+    | true => idp
+    | false => idp
+  }
+}
+
+\func fromBool (b : Bool) : Equiv {Bool} {Bool}
+  | true => idEquiv
+  | false => notEquiv
+
+\func toBool (e : Equiv {Bool} {Bool}) : Bool => e.f true
+
+\func to_from (b : Bool) : toBool (fromBool b) = b
+  | true => idp
+  | false => idp
+
+\func from_to (e : Equiv {Bool} {Bool}) : fromBool (toBool e) = e =>
+  Equiv.equals {Bool} {Bool} (lemma_from_to e)
+  \where {
+    \func lemma (f : Bool -> Bool) (isInj : \Pi {x y : Bool} -> f x = f y -> x = y) :
+      not (f true) = f false =>
+      \case f true \as b, idp : f true = b, f false \as b', idp : b' = f false \with {
+        | true, p, true, q => absurd (true/=false (isInj (p *> q)))
+        | true, p, false, q => pmap not p *> q
+        | false, p, true, q => pmap not p *> q
+        | false, p, false, q => absurd (true/=false (isInj (p *> q)))
+      }
+
+    \func lemma_from_to (e : Equiv {Bool} {Bool}) : Map.f {fromBool (toBool e)} = e.f =>
+      \case e.f true \as b, idp : b = e.f true \return Map.f {fromBool b} = e.f \with {
+        | true, p => funExt (\lam _ => _) _ _ (\lam (x : Bool) =>
+            \case \elim x \with {
+              | true => p
+              | false => (pmap not p) *> (lemma (Map.f {e}) (equiv_isInj e))
+            }
+        )
+        | false, p => funExt (\lam _ => _) _ _ (\lam (x : Bool) =>
+            \case \elim x \with {
+              | true => p
+              | false => (pmap not p) *> (lemma (Map.f {e}) (equiv_isInj e))
+            }
+        )
+      }
+  }
+
+\func [Bool=Bool]=Bool : (Bool = Bool) = Bool =>
+  QEquiv-to-= univalence *> path (iso toBool fromBool from_to to_from)
