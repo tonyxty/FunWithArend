@@ -31,3 +31,11 @@
   coe' (idpe A) a        ==< pmap (\lam p => coe' p a) (inv (homotopy p)) >==
   coe' (pmap Unwrap p) a ==< pmapd Unwrap unwrap p >==
   b                      `qed
+
+-- there's always someone out there who makes you feel like a ⑨
+-- solution taken from codewars
+\func just-injective' {A : \Type} (a b : A) (p : just a = just b) : a = b =>
+  path (\lam i => \case p @ i \with {
+    | just x => x
+    | nothing => a
+  })
