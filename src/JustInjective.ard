@@ -1,0 +1,33 @@
+\import Function
+\import Logic
+\import Paths
+
+\data Maybe (A : \Type)
+  | just A
+  | nothing
+
+\func Unwrap {A : \Type} (a : Maybe A) : \Type \elim a
+  | just _ => A
+  | nothing => \Sigma
+
+\func unwrap {A : \Type} (a : Maybe A) : Unwrap a \elim a
+  | just a => a
+  | nothing => ()
+
+\func homotopy {A : \Type} {a b : A} (p : just a = just b) : pmap Unwrap p = idp =>
+  path (\lam j => path (\lam i => =A-on-path p i @ j))
+  \where {
+    \func =A-on-path {A : \Type} {a b : A} (p : just a = just b) (i : I) : Unwrap (p @ i) = A =>
+      \case p @ i \as a', psqueeze p i : just a = a' \return Unwrap a' = A \with {
+        | just _, _ => idp
+      }
+  }
+
+-- we need this simple version of coe to fix the type signature
+
+\func coe' {A B : \Type} (p : A = B) (a : A) : B => coe (\lam i => p @ i) a right
+
+\func just-injective {A : \Type} (a b : A) (p : just a = just b) : a = b =>
+  coe' (idpe A) a        ==< pmap (\lam p => coe' p a) (inv (homotopy p)) >==
+  coe' (pmap Unwrap p) a ==< pmapd Unwrap unwrap p >==
+  b                      `qed
