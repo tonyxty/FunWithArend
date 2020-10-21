@@ -1,0 +1,39 @@
+\import Algebra.Group
+\import Algebra.Monoid
+\import Paths
+\import Paths.Meta
+
+\class RingInterface (E : \Set)
+  | \infixl 7 + : E -> E -> E
+  | negative : E -> E
+  | zro : E
+  | \infixl 8 * : E -> E -> E
+  | ide : E
+  | ldistr (x y z : E) : x * (y + z) = x * y + x * z
+  | rdistr (x y z : E) : (x + y) * z = x * z + y * z
+  | lann (x : E) : zro * x = zro
+  | rann (x : E) : x * zro = zro
+
+-- this approach eliminates the need for a separate family of group structures defined with (*) replaced by (+)
+\class Ring \extends RingInterface
+  | add : CGroup E
+  | mult : Monoid E
+  | + => add.*
+  | negative => add.inverse
+  | zro => add.ide
+  | * => mult.*
+  | ide => mult.ide
+
+\func example1 (R : Ring) (x : R) : (ide + ide) * x = x + x => rewrite R.rdistr (rewrite R.mult.ide-left idp)
+
+-- note the occurence problem: we want to rewrite only the second occurence of `x` by mult.ide-left and obtain
+-- (negative ide) * x + ide * x = zro
+\func example2 (R : Ring) (x : R) : (negative ide) * x + x = zro =>
+  (negative ide) * x + x       ==< pmap ((negative ide * x) +) (inv R.mult.ide-left) >==
+  (negative ide) * x + ide * x ==< inv (R.rdistr _ _ _) >==
+  (negative ide + ide) * x     ==< pmap (`* x) (R.add.inverse-left _) >==
+  zro * x                      ==< lann _ >==
+  zro `qed
+
+-- we can directly apply results proved for groups to `R.add` and `R.mult` without any ambiguity.  but we can't
+-- demonstrate it here since there are too few results for groups to make anything useful.
