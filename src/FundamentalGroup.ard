@@ -32,7 +32,6 @@
   transport B (p *> q) = (transport B q o transport B p) =>
   funExt (\lam _ => _) _ _ (transport_*> B _ _)
 
--- why is MonoidHom a \record and not a \class?
 \func TransportHom {A : \1-Type} (x : A) (B : A -> \Set) :
   MonoidHom (FundamentalGroup A x) (EndMonoid (B x)) (\lam p => \new Endomorphism (transport B p)) \cowith
   | func-ide => idp

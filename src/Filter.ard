@@ -46,8 +46,7 @@
 
 \func filter_isAllP {A : \Type} (P : A -> Bool) (l : List A) : (filter P l) `isAll` P \elim l
   | nil => ()
-  | :: x xs => \case P x \as b, idp {Bool} {b}: b = P x \return
-  (\let ys => filter P xs \in if b (x :: ys) ys) `isAll` P \with {
+  | :: x xs => \case P x \as b, idp : b = P x \return (\let ys => filter P xs \in if b (x :: ys) ys) `isAll` P \with {
     | true, e => (transport So e so, filter_isAllP P xs)
     | false, _ => filter_isAllP P xs
   }
